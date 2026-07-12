@@ -16,7 +16,11 @@
           </div>
         </n-layout-header>
         <n-layout-content content-style="padding: 0;">
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <transition name="page-fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
         </n-layout-content>
       </n-layout>
     </n-message-provider>
@@ -38,4 +42,8 @@ a { text-decoration: none; color: inherit; }
 .nav-links { display: flex; gap: 20px; }
 .nav-links a { font-size: 14px; color: #888; transition: color 0.2s; padding: 6px 12px; border-radius: 6px; }
 .nav-links a:hover, .nav-links a.router-link-active { color: #e0e0e0; background: rgba(255,255,255,0.05); }
+
+.page-fade-enter-active, .page-fade-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.page-fade-enter-from { opacity: 0; transform: translateY(6px); }
+.page-fade-leave-to { opacity: 0; transform: translateY(-6px); }
 </style>

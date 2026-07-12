@@ -252,10 +252,11 @@ onMounted(async () => {
 .class-bar { margin-bottom: 20px; background: var(--n-card-color); border-radius: 12px; padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .class-tags { display: flex; gap: 8px; flex-wrap: nowrap; }
 .class-tag {
-  flex-shrink: 0; padding: 6px 16px; border: 1px solid var(--n-border-color);
-  border-radius: 20px; background: transparent; cursor: pointer; font-size: 13px; transition: all 0.2s; white-space: nowrap;
+  flex-shrink: 0; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; background: rgba(255,255,255,0.06); cursor: pointer; font-size: 13px;
+  transition: all 0.2s; white-space: nowrap; color: #ccc;
 }
-.class-tag:hover { border-color: var(--n-primary-color); color: var(--n-primary-color); }
+.class-tag:hover { border-color: var(--n-primary-color); color: #fff; background: rgba(0,170,238,0.1); }
 .class-tag.active { background: var(--n-primary-color); border-color: var(--n-primary-color); color: #fff; }
 .quick-entry { display: flex; gap: 12px; margin-bottom: 24px; }
 .quick-card { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; background: var(--n-card-color); border-radius: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }

@@ -2,7 +2,7 @@
   <div class="detail-page">
     <div v-if="!siteKey" class="empty-tip"><n-empty description="请先选择站点" /></div>
 
-    <div v-else-if="detail" class="detail-layout">
+    <div v-else-if="detail" class="detail-layout fade-in">
       <!-- Left: Player -->
       <div class="player-column">
         <div class="player-sticky">
@@ -94,7 +94,12 @@
       </div>
     </div>
 
-    <div v-else class="loading-area">
+    <div v-else-if="loading" class="loading-fullscreen">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">正在加载详情...</p>
+    </div>
+
+    <div v-else-if="!detail" class="loading-area">
       <div class="skeleton-info">
         <n-skeleton width="60%" :height="32" />
         <n-skeleton width="40%" :height="20" style="margin-top:12px" />
@@ -399,6 +404,16 @@ function throttle(fn: (...args: any[]) => void, delay: number) {
 .ep-btn.active { background: var(--n-primary-color); border-color: var(--n-primary-color); color: #fff; }
 
 .empty-tip { display: flex; justify-content: center; padding: 60px 0; }
+.loading-fullscreen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 60vh; gap: 16px;
+}
+.loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--n-primary-color); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.loading-text { font-size: 14px; color: #888; }
 .loading-area { padding: 20px; }
 .skeleton-info { background: var(--n-card-color); border-radius: 12px; padding: 20px; }
+
+.fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
