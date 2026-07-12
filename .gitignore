@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# Database & config (user data)
+*.db
+*.sqlite
+data/config.json
+data/fongmi.db
+
+# Logs
+*.log
+
+# Dev / setup files (local-only)
+test_sub.json
+setup_db.py
+final_check.py
+_run_server.py
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend build
+frontend/dist/
+
+# Internal project docs
+conductor/
+docs/
+*.png
+front/
