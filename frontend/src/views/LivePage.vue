@@ -101,14 +101,19 @@
               </span>
               <span class="player-resolution" v-if="videoResolution">{{ videoResolution }}</span>
             </div>
-            <button
-              v-if="currentChannel && currentChannel.urls && currentChannel.urls.length > 1"
-              class="line-switch-btn"
-              @click="switchLine"
-              title="切换线路"
-            >
-              换线
-            </button>
+            <div class="player-actions">
+              <button class="proxy-toggle" @click="toggleProxy" :title="useProxy ? '当前：代理模式（点击切换直连）' : '当前：直连模式（点击切换代理）'">
+                {{ useProxy ? '代理' : '直连' }}
+              </button>
+              <button
+                v-if="currentChannel && currentChannel.urls && currentChannel.urls.length > 1"
+                class="line-switch-btn"
+                @click="switchLine"
+                title="切换线路"
+              >
+                换线
+              </button>
+            </div>
           </div>
           <div class="player-buffer-bar" v-if="bufferPercent > 0">
             <div class="buffer-fill" :style="{ width: bufferPercent + '%' }"></div>
@@ -142,7 +147,7 @@ const loadingSource = ref(-1)
 const searchQuery = ref('')
 const collapsedGroups = ref<Record<string, boolean>>({})
 
-const { videoRef, videoResolution, bufferPercent, isBuffering, downloadSpeed, initPlayer, setupVideoEvents, resetVideoInfo } = usePlayer()
+const { videoRef, videoResolution, bufferPercent, isBuffering, downloadSpeed, initPlayer, setupVideoEvents, resetVideoInfo, useProxy } = usePlayer()
 
 const currentUrl = computed(() => {
   const ch = currentChannel.value
@@ -231,6 +236,19 @@ function switchLine() {
     setupVideoEvents()
     initPlayer(ch.urls[next], currentHeaders.value)
   })
+}
+
+function toggleProxy() {
+  useProxy.value = !useProxy.value
+  if (currentChannel.value) {
+    const ch = currentChannel.value
+    resetVideoInfo()
+    nextTick(() => {
+      setupVideoEvents()
+      initPlayer(ch.urls[currentLineIndex.value], currentHeaders.value)
+    })
+  }
+  window.$message?.info(useProxy.value ? '已切换为代理模式' : '已切换为直连模式')
 }
 
 onMounted(async () => {
@@ -365,6 +383,13 @@ async function loadChannels(idx: number) {
 }
 .player-overlay > * { pointer-events: auto; }
 .player-info { display: flex; align-items: center; gap: 8px; }
+.player-actions { display: flex; align-items: center; gap: 6px; }
+.proxy-toggle {
+  padding: 4px 12px; font-size: 11px; border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 12px; background: rgba(0,0,0,0.4); color: #ccc;
+  cursor: pointer; transition: all 0.15s;
+}
+.proxy-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; border-color: var(--n-primary-color); }
 .player-ch-name { font-size: 14px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 .player-line-info { font-size: 11px; color: #aaa; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 8px; }
 .player-resolution { font-size: 11px; color: #aaa; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 8px; }

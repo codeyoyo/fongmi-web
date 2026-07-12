@@ -250,7 +250,12 @@ onMounted(async () => {
 .site-select { width: 280px; }
 .search-input { flex: 1; }
 .class-bar { margin-bottom: 20px; background: var(--n-card-color); border-radius: 12px; padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.class-tags { display: flex; gap: 8px; flex-wrap: nowrap; }
+.class-bar :deep(.n-scrollbar-rail) { background: rgba(255,255,255,0.05); border-radius: 4px; }
+.class-bar :deep(.n-scrollbar-rail:hover) { background: rgba(255,255,255,0.08); }
+.class-bar :deep(.n-scrollbar-rail__scrollbar) { background: rgba(255,255,255,0.2); border-radius: 4px; }
+.class-bar :deep(.n-scrollbar-rail__scrollbar:hover) { background: rgba(255,255,255,0.35); }
+.class-bar :deep(.n-scrollbar-content) { padding-bottom: 8px; }
+.class-tags { display: flex; gap: 8px; flex-wrap: nowrap; padding-bottom: 4px; }
 .class-tag {
   flex-shrink: 0; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.15);
   border-radius: 20px; background: rgba(255,255,255,0.06); cursor: pointer; font-size: 13px;
