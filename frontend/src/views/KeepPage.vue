@@ -1,7 +1,7 @@
 <template>
   <div class="keep-page">
     <div class="page-header">
-      <h2>❤️ 我的收藏</h2>
+      <h2>♥ 我的收藏</h2>
     </div>
     <div v-if="loading" class="loading"><n-spin size="large" /></div>
     <div v-else-if="!list.length" class="empty"><n-empty description="暂无收藏" /></div>
@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { NButton, NSpin, NEmpty } from 'naive-ui'
+import { NSpin, NEmpty } from 'naive-ui'
 import { keepAPI } from '@/api/vod'
 import { imgUrl } from '@/api/img'
 

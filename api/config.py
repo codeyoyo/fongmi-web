@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
 
 from api.decoder import decrypt_config
-from model.database import get_db, Config as ConfigModel, Site as SiteModel
+from model.database import get_db, Config as ConfigModel, Site as SiteModel, Parse as ParseModel
 from model.bean import VodConfig, ConfigImportRequest
 
 router = APIRouter()
@@ -121,6 +121,16 @@ async def import_config(
             filterable=site.filterable,
         )
         db.add(site_entry)
+
+    for parse in cfg.parses:
+        parse_entry = ParseModel(
+            config_id=config_entry.id,
+            name=parse.name,
+            url=parse.url,
+            type=parse.type,
+            ext=json.dumps(parse.ext, ensure_ascii=False) if isinstance(parse.ext, dict) else str(parse.ext),
+        )
+        db.add(parse_entry)
 
     await db.commit()
 

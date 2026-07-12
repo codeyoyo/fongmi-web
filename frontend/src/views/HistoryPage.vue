@@ -2,7 +2,12 @@
   <div class="history-page">
     <div class="page-header">
       <n-button text @click="$router.back()">← 返回</n-button>
-      <h2>⏱️ 观看历史</h2>
+      <h2>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:4px">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        观看历史
+      </h2>
       <n-button v-if="list.length" text type="error" @click="clearAll">清空</n-button>
     </div>
     <div v-if="loading" class="loading"><n-spin size="large" /></div>

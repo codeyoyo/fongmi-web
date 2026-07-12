@@ -5,3 +5,12 @@ declare module '*.vue' {
   const component: DefineComponent<{}, {}, any>
   export default component
 }
+
+declare module 'flv.js' {
+  const flvjs: any
+  export default flvjs
+}
+
+interface Window {
+  $message: import('naive-ui').MessageApi
+}

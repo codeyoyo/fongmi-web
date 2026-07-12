@@ -22,6 +22,7 @@ export const liveAPI = {
 export const historyAPI = {
   list: (page = 1, size = 20) => request.get('/history', { params: { page, size } }),
   add: (data: any) => request.post('/history', data),
+  update: (data: any) => request.put('/history', data),
   delete: (id: number) => request.delete(`/history/${id}`),
   clear: () => request.delete('/history'),
 }

@@ -48,6 +48,17 @@ class Site(Base):
     filterable: Mapped[int] = mapped_column(Integer, default=1)
 
 
+class Parse(Base):
+    __tablename__ = "parse"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    config_id: Mapped[int] = mapped_column(Integer, ForeignKey("config.id"), index=True)
+    name: Mapped[str] = mapped_column(String(255), default="")
+    url: Mapped[str] = mapped_column(String(1024), default="")
+    type: Mapped[int] = mapped_column(Integer, default=0)
+    ext: Mapped[str] = mapped_column(Text, default="")
+
+
 class History(Base):
     __tablename__ = "history"
 

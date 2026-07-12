@@ -1,7 +1,12 @@
 <template>
   <div class="live-page">
     <div class="live-header">
-      <h2>📡 IPTV 电视直播</h2>
+      <h2>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:6px">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        IPTV 电视直播
+      </h2>
       <span class="source-count" v-if="sources.length">{{ sources.length }} 个源</span>
     </div>
 
@@ -25,61 +30,63 @@
     <div class="live-content">
       <!-- Left: Channel list -->
       <div class="groups-panel">
-        <div v-if="loading" class="loading-overlay">
-          <n-spin size="medium" />
-          <span>加载中...</span>
+        <div v-if="loading" class="loading-area">
+          <n-skeleton width="100%" :height="40" v-for="i in 6" :key="i" style="margin-bottom:8px" />
         </div>
 
-        <div class="channel-search" v-if="!loading && flatChannels.length > 0">
-          <span class="search-icon">🔍</span>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="搜索频道..."
-            class="search-input"
-          />
-        </div>
+        <template v-if="!loading">
+          <div class="channel-search" v-if="flatChannels.length > 0">
+            <span class="search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+              </svg>
+            </span>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="搜索频道..."
+              class="search-input"
+            />
+          </div>
 
-        <div class="groups-control" v-if="filteredChannels.length > 0">
-          <button
-            class="collapse-all-btn"
-            @click="allCollapsed ? expandAll() : collapseAll()"
-          >
-            {{ allCollapsed ? '全部展开' : '全部折叠' }}
-          </button>
-        </div>
+          <div class="groups-control" v-if="filteredChannels.length > 0">
+            <button
+              class="collapse-all-btn"
+              @click="allCollapsed ? expandAll() : collapseAll()"
+            >
+              {{ allCollapsed ? '全部展开' : '全部折叠' }}
+            </button>
+          </div>
 
-        <template v-for="group in filteredChannels" :key="group.name">
-          <div class="group-section">
-            <div class="group-title" @click="toggleGroup(group.name)">
-              <span class="group-arrow">{{ collapsedGroups[group.name] ? '▶' : '▼' }}</span>
-              <span class="group-icon">📺</span>
-              <span class="group-name">{{ group.name }}</span>
-              <span class="group-count" v-if="group.channels.length">{{ group.channels.length }}</span>
-            </div>
-            <div class="channels-list" v-if="!collapsedGroups[group.name]">
-              <div
-                v-for="(ch, idx) in group.channels"
-                :key="idx"
-                :class="['channel-item', { active: currentChannel?.name === ch.name }]"
-                @click="playChannel(ch)"
-              >
-                <span class="ch-name">{{ ch.name }}</span>
-                <span class="ch-lines-badge" v-if="ch.urls && ch.urls.length > 1">{{ ch.urls.length }}路</span>
-                <span v-if="currentChannel?.name === ch.name && isPlaying" class="ch-live">● LIVE</span>
+          <template v-for="group in filteredChannels" :key="group.name">
+            <div class="group-section">
+              <div class="group-title" @click="toggleGroup(group.name)">
+                <span class="group-arrow">{{ collapsedGroups[group.name] ? '▶' : '▼' }}</span>
+                <span class="group-name">{{ group.name }}</span>
+                <span class="group-count" v-if="group.channels.length">{{ group.channels.length }}</span>
+              </div>
+              <div class="channels-list" v-if="!collapsedGroups[group.name]">
+                <div
+                  v-for="(ch, idx) in group.channels"
+                  :key="idx"
+                  :class="['channel-item', { active: currentChannel?.name === ch.name }]"
+                  @click="playChannel(ch)"
+                >
+                  <span class="ch-name">{{ ch.name }}</span>
+                  <span class="ch-lines-badge" v-if="ch.urls && ch.urls.length > 1">{{ ch.urls.length }}路</span>
+                  <span v-if="currentChannel?.name === ch.name && isPlaying" class="ch-live">● LIVE</span>
+                </div>
               </div>
             </div>
+          </template>
+
+          <div v-if="!flatChannels.length" class="no-channels">
+            <p>该源无频道数据</p>
+          </div>
+          <div v-if="searchQuery && filteredChannels.length === 0 && flatChannels.length > 0" class="no-channels">
+            <p>未找到匹配的频道</p>
           </div>
         </template>
-
-        <div v-if="!loading && !flatChannels.length" class="no-channels">
-          <div class="no-icon">📭</div>
-          <p>该源无频道数据</p>
-        </div>
-        <div v-if="!loading && searchQuery && filteredChannels.length === 0 && flatChannels.length > 0" class="no-channels">
-          <div class="no-icon">🔍</div>
-          <p>未找到匹配的频道</p>
-        </div>
       </div>
 
       <!-- Right: Player -->
@@ -100,7 +107,7 @@
               @click="switchLine"
               title="切换线路"
             >
-              🔄 切线路
+              换线
             </button>
           </div>
           <div class="player-buffer-bar" v-if="bufferPercent > 0">
@@ -112,7 +119,6 @@
           </div>
         </div>
         <div v-else class="player-placeholder">
-          <div class="placeholder-icon">📺</div>
           <p>选择左侧频道开始播放</p>
         </div>
       </div>
@@ -121,9 +127,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { NScrollbar, NSpin } from 'naive-ui'
-import Hls from 'hls.js'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { NScrollbar, NSkeleton } from 'naive-ui'
+import { usePlayer } from '@/composables/usePlayer'
 
 const sources = ref<any[]>([])
 const channelsMap = ref<Record<number, any[]>>({})
@@ -135,20 +141,19 @@ const loading = ref(false)
 const loadingSource = ref(-1)
 const searchQuery = ref('')
 const collapsedGroups = ref<Record<string, boolean>>({})
-const videoRef = ref<HTMLVideoElement | null>(null)
-const videoResolution = ref('')
-const bufferPercent = ref(0)
-const isBuffering = ref(false)
-const downloadSpeed = ref('')
-let hls: Hls | null = null
-let speedTimer: ReturnType<typeof setInterval> | null = null
-let lastLoadedBytes = 0
-let lastSpeedTime = 0
+
+const { videoRef, videoResolution, bufferPercent, isBuffering, downloadSpeed, initPlayer, setupVideoEvents, resetVideoInfo } = usePlayer()
 
 const currentUrl = computed(() => {
   const ch = currentChannel.value
   if (!ch || !ch.urls || ch.urls.length === 0) return ''
   return ch.urls[currentLineIndex.value] || ch.urls[0]
+})
+
+const currentHeaders = computed(() => {
+  const ch = currentChannel.value
+  if (!ch || !ch.headers || ch.headers.length === 0) return null
+  return ch.headers[currentLineIndex.value] || null
 })
 
 const currentChannels = computed(() => channelsMap.value[currentSource.value] || [])
@@ -201,83 +206,6 @@ function expandAll() {
   }
 }
 
-function setupVideoEvents() {
-  const el = videoRef.value
-  if (!el) return
-  el.onloadedmetadata = () => {
-    videoResolution.value = el.videoWidth && el.videoHeight
-      ? `${el.videoWidth} × ${el.videoHeight}`
-      : ''
-  }
-  el.onresize = () => {
-    videoResolution.value = el.videoWidth && el.videoHeight
-      ? `${el.videoWidth} × ${el.videoHeight}`
-      : ''
-  }
-  el.onprogress = () => {
-    if (el.buffered.length > 0 && el.duration > 0) {
-      const end = el.buffered.end(el.buffered.length - 1)
-      bufferPercent.value = Math.round((end / el.duration) * 100)
-    }
-  }
-  el.onwaiting = () => {
-    isBuffering.value = true
-    if (!speedTimer) startSpeedMonitor()
-  }
-  el.oncanplay = () => {
-    isBuffering.value = false
-  }
-  el.onplaying = () => {
-    isBuffering.value = false
-    stopSpeedMonitor()
-  }
-  el.onerror = () => {
-    isBuffering.value = false
-    stopSpeedMonitor()
-  }
-}
-
-function startSpeedMonitor() {
-  lastLoadedBytes = 0
-  lastSpeedTime = Date.now()
-  speedTimer = setInterval(() => {
-    const el = videoRef.value
-    if (!el) return
-    const now = Date.now()
-    const elapsed = (now - lastSpeedTime) / 1000
-    if (elapsed <= 0) return
-    const buffered = el.buffered
-    const loadedBytes = buffered.length > 0
-      ? buffered.end(buffered.length - 1) * (el.videoWidth > 0 ? 1 : 1)
-      : 0
-    const bytesDelta = loadedBytes - lastLoadedBytes
-    if (bytesDelta > 0 && elapsed > 0) {
-      const speed = (bytesDelta / elapsed)
-      downloadSpeed.value = speed >= 1024 * 1024
-        ? `${(speed / 1024 / 1024).toFixed(1)} MB/s`
-        : `${(speed / 1024).toFixed(0)} KB/s`
-    }
-    lastLoadedBytes = loadedBytes
-    lastSpeedTime = now
-  }, 1000)
-}
-
-function stopSpeedMonitor() {
-  if (speedTimer) {
-    clearInterval(speedTimer)
-    speedTimer = null
-  }
-  downloadSpeed.value = ''
-}
-
-function resetVideoInfo() {
-  videoResolution.value = ''
-  bufferPercent.value = 0
-  isBuffering.value = false
-  downloadSpeed.value = ''
-  stopSpeedMonitor()
-}
-
 function playChannel(ch: any) {
   if (currentChannel.value?.name === ch.name && isPlaying.value) {
     switchLine()
@@ -289,7 +217,7 @@ function playChannel(ch: any) {
   isPlaying.value = true
   nextTick(() => {
     setupVideoEvents()
-    initPlayer(ch.urls[0])
+    initPlayer(ch.urls[0], currentHeaders.value)
   })
 }
 
@@ -301,7 +229,7 @@ function switchLine() {
   resetVideoInfo()
   nextTick(() => {
     setupVideoEvents()
-    initPlayer(ch.urls[next])
+    initPlayer(ch.urls[next], currentHeaders.value)
   })
 }
 
@@ -317,8 +245,8 @@ async function loadSources() {
     const { liveAPI } = await import('@/api/vod')
     const res = await liveAPI.groups()
     sources.value = Array.isArray(res) ? res : []
-  } catch (e) {
-    console.error('Load sources error:', e)
+  } catch (e: any) {
+    window.$message?.error('加载源列表失败')
   }
 }
 
@@ -346,46 +274,14 @@ async function loadChannels(idx: number) {
     const res = await liveAPI.channels(idx)
     const data = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : [])
     channelsMap.value[idx] = data
-  } catch (e) {
-    console.error('Load channels error:', e)
+  } catch (e: any) {
+    window.$message?.error('加载频道列表失败')
     channelsMap.value[idx] = []
   } finally {
     loading.value = false
     loadingSource.value = -1
   }
 }
-
-function initPlayer(url: string) {
-  if (!videoRef.value) return
-  if (hls) {
-    hls.destroy()
-    hls = null
-  }
-  if (url.includes('.m3u8') && Hls.isSupported()) {
-    hls = new Hls()
-    hls.loadSource(url)
-    hls.attachMedia(videoRef.value)
-    hls.on(Hls.Events.ERROR, (_: any, data: any) => {
-      if (data.fatal) {
-        console.error('HLS fatal error:', data)
-        if (videoRef.value && !url.includes('.m3u8')) {
-          videoRef.value.src = url
-        }
-      }
-    })
-  } else {
-    videoRef.value.src = url
-    videoRef.value.play().catch(e => console.error('Play error:', e))
-  }
-}
-
-onBeforeUnmount(() => {
-  if (hls) {
-    hls.destroy()
-    hls = null
-  }
-  stopSpeedMonitor()
-})
 </script>
 
 <style scoped>
@@ -414,19 +310,14 @@ onBeforeUnmount(() => {
   background: var(--n-card-color); border-radius: 12px; padding: 12px;
   position: relative;
 }
-.loading-overlay {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 8px;
-  background: rgba(0,0,0,0.4); z-index: 10; border-radius: 12px;
-  font-size: 13px; color: #888; backdrop-filter: blur(2px);
-}
+.loading-area { padding: 12px 0; }
 
 .channel-search {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 10px; margin-bottom: 8px;
   background: var(--n-divider-color); border-radius: 8px;
 }
-.search-icon { font-size: 13px; flex-shrink: 0; }
+.search-icon { font-size: 13px; flex-shrink: 0; display:flex; align-items:center; }
 .search-input {
   flex: 1; background: transparent; border: none; outline: none;
   color: var(--n-text-color); font-size: 13px; width: 100%;
@@ -448,7 +339,6 @@ onBeforeUnmount(() => {
 }
 .group-title:hover { background: rgba(255,255,255,0.05); }
 .group-arrow { font-size: 10px; color: #888; width: 12px; flex-shrink: 0; }
-.group-icon { font-size: 14px; flex-shrink: 0; }
 .group-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--n-primary-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .group-count { font-size: 11px; color: #888; background: var(--n-divider-color); padding: 1px 8px; border-radius: 10px; }
 
@@ -462,7 +352,6 @@ onBeforeUnmount(() => {
 @keyframes blink { 50% { opacity: 0.3; } }
 
 .no-channels { padding: 40px 0; text-align: center; }
-.no-icon { font-size: 48px; margin-bottom: 8px; }
 .no-channels p { color: #888; }
 
 .player-panel { flex: 1; background: #000; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -496,5 +385,4 @@ onBeforeUnmount(() => {
 }
 .line-switch-btn:hover { background: rgba(255,255,255,0.15); }
 .player-placeholder { text-align: center; color: #555; }
-.placeholder-icon { font-size: 64px; margin-bottom: 12px; }
 </style>

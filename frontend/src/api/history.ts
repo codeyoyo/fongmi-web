@@ -3,6 +3,7 @@ import { request } from './request'
 export const historyAPI = {
   list: (page = 1, size = 20) => request.get('/api/history', { params: { page, size } }),
   add: (data: any) => request.post('/api/history', data),
+  update: (data: any) => request.put('/api/history', data),
   delete: (id: number) => request.delete(`/api/history/${id}`),
   clear: () => request.delete('/api/history'),
 }

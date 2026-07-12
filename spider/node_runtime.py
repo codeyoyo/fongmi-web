@@ -12,8 +12,6 @@ _LOCK = threading.Lock()
 
 def _ensure_node():
     global _NODE_PROC
-    if _NODE_PROC is not None and _NODE_PROC.poll() is None:
-        return True
     with _LOCK:
         if _NODE_PROC is not None and _NODE_PROC.poll() is None:
             return True

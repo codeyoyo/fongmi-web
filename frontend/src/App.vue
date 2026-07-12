@@ -4,7 +4,7 @@
       <n-layout position="absolute">
         <n-layout-header bordered class="app-header">
           <div class="header-content">
-            <div class="logo" @click="$router.push('/')">📺 FongMi TV</div>
+            <div class="logo" @click="$router.push('/')">FongMi TV</div>
             <nav class="nav-links">
               <router-link to="/">首页</router-link>
               <router-link to="/live">直播</router-link>

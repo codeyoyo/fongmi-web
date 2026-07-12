@@ -52,6 +52,15 @@ class _SpiderInstance:
                 from spider.http_spider import HttpSpider
                 self._runtime = HttpSpider(self.api, self.ext or "")
             elif self.spider_type == 3:
+                if self.api.endswith(".js"):
+                    import shutil
+                    if shutil.which("node"):
+                        from spider.node_runtime import NodeSpider, ensure_engine
+                        if ensure_engine():
+                            rt = NodeSpider(self.api, self.api, self.ext or "")
+                            rt.load()
+                            self._runtime = rt
+                            return
                 from spider.js_runtime import SpiderJSRuntime
                 rt = SpiderJSRuntime()
                 rt.load_spider(self._read_api())
@@ -128,10 +137,17 @@ async def search_content(site, key, quick=False, pg=""):
     return await asyncio.to_thread(spider.call, "searchContent", key)
 
 
-async def player_content(site, flag, id, vip_flags):
+async def player_content(site, flag, id, vip_flags=None, parses=None):
     spider = engine.get_spider(site)
     import asyncio
-    return await asyncio.to_thread(spider.call, "playerContent", flag, id)
+    result = await asyncio.to_thread(spider.call, "playerContent", flag, id)
+    if parses and result.get("parse") == 1:
+        from spider.parser import ParserEngine
+        pe = ParserEngine(parses)
+        resolved = await pe.resolve(result.get("url", ""), flag)
+        if resolved:
+            result.update(resolved)
+    return result
 
 
 async def live_content(site, url=""):

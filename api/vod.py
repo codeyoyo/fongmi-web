@@ -4,14 +4,14 @@ from fastapi import APIRouter, Query, HTTPException
 from loguru import logger
 
 from spider.engine import home_content, category_content, detail_content, search_content, player_content
-from model.database import async_session, Site as SiteModel, Config as ConfigModel
+from model.database import async_session, Site as SiteModel, Config as ConfigModel, Parse as ParseModel
 from model.bean import Site
 from sqlalchemy import select
 
 router = APIRouter(prefix="/vod", tags=["vod"])
 
 
-async def _get_site(site_key: str) -> Site:
+async def _get_site(site_key: str):
     async with async_session() as session:
         result = await session.execute(select(SiteModel).where(SiteModel.key == site_key))
         db = result.scalar_one_or_none()
@@ -20,18 +20,34 @@ async def _get_site(site_key: str) -> Site:
     ext = db.ext or ""
     if isinstance(ext, dict):
         ext = json.dumps(ext, ensure_ascii=False)
-    return Site(
+    site = Site(
         key=db.key, name=db.name, type=db.type,
         api=db.api, ext=ext, jar="",
         searchable=1, quickSearch=1, filterable=1,
     )
+    parses = []
+    async with async_session() as session:
+        config_result = await session.execute(
+            select(ConfigModel).where(ConfigModel.is_active == 1).limit(1)
+        )
+        active_config = config_result.scalar_one_or_none()
+        if active_config:
+            parse_result = await session.execute(
+                select(ParseModel).where(ParseModel.config_id == active_config.id)
+            )
+            db_parses = parse_result.scalars().all()
+            parses = [
+                {"name": p.name, "url": p.url, "type": p.type, "ext": p.ext}
+                for p in db_parses
+            ]
+    return site, parses
 
 
 @router.get("/home")
 async def vod_home(site_key: str = Query(default=""), filter: bool = Query(default=True)):
     if not site_key:
         raise HTTPException(400, "site_key required")
-    site = await _get_site(site_key)
+    site, _ = await _get_site(site_key)
     try:
         return await home_content(site, filter)
     except HTTPException:
@@ -47,7 +63,7 @@ async def vod_category(
     pg: str = Query(default="1"), filter: bool = Query(default=True),
     extend: str = Query(default=""),
 ):
-    site = await _get_site(site_key)
+    site, _ = await _get_site(site_key)
     ext = {}
     if extend:
         try:
@@ -65,7 +81,7 @@ async def vod_category(
 
 @router.get("/detail")
 async def vod_detail(site_key: str = Query(...), ids: str = Query(...)):
-    site = await _get_site(site_key)
+    site, _ = await _get_site(site_key)
     id_list = [i.strip() for i in ids.split(",") if i.strip()]
     if not id_list:
         raise HTTPException(400, "ids required")
@@ -95,10 +111,10 @@ async def vod_search(wd: str = Query(...)):
 @router.get("/player")
 async def vod_player(site_key: str = Query(...), flag: str = Query(default=""),
                      id: str = Query(...), vip: str = Query(default="")):
-    site = await _get_site(site_key)
+    site, parses = await _get_site(site_key)
     vip_flags = [v.strip() for v in vip.split(",") if v.strip()] if vip else []
     try:
-        result = await player_content(site, flag, id, vip_flags)
+        result = await player_content(site, flag, id, vip_flags, parses)
         return result
     except HTTPException:
         raise

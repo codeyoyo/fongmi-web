@@ -8,11 +8,20 @@
 
     <!-- Empty state -->
     <div v-else-if="!hasSite" class="empty-state">
-      <div class="empty-icon">📺</div>
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:#555">
+          <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
+          <polygon points="10 11 16 14.5 10 18 10 11"/>
+        </svg>
+      </div>
       <h2>欢迎来到 FongMi TV</h2>
       <p>请先导入您的订阅配置即可开始观看</p>
       <n-button type="primary" size="large" round @click="$router.push('/setting')">
-        <template #icon><span style="font-size:18px">⚙️</span></template>
+        <template #icon>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </template>
         前往设置导入
       </n-button>
     </div>
@@ -36,7 +45,11 @@
           clearable
           @keyup.enter="doSearch"
         >
-          <template #prefix>🔍</template>
+          <template #prefix>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+          </template>
         </n-input>
       </div>
 
@@ -59,24 +72,36 @@
       <!-- Quick entry -->
       <div class="quick-entry">
         <div class="quick-card" @click="$router.push('/live')">
-          <div class="quick-icon">📡</div>
+          <div class="quick-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+          </div>
           <span>电视直播</span>
         </div>
         <div class="quick-card" @click="$router.push('/history')">
-          <div class="quick-icon">⏱️</div>
+          <div class="quick-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
           <span>观看历史</span>
         </div>
         <div class="quick-card" @click="$router.push('/keep')">
-          <div class="quick-icon">❤️</div>
+          <div class="quick-icon">♥</div>
           <span>我的收藏</span>
         </div>
       </div>
 
       <!-- Video grid -->
       <div class="video-section">
-        <n-spin :show="loading">
-          <div v-if="!loading && !videos.length" class="no-data">
-            <div class="no-data-icon">📭</div>
+        <div v-if="loading" class="skeleton-grid">
+          <div v-for="i in 12" :key="i" class="skeleton-card">
+            <n-skeleton width="100%" :height="270" bordered />
+          </div>
+        </div>
+        <template v-else>
+          <div v-if="!videos.length" class="no-data">
             <p>暂无数据</p>
           </div>
           <div class="video-grid">
@@ -95,7 +120,7 @@
               </div>
             </div>
           </div>
-        </n-spin>
+        </template>
         <div v-if="pagecount > 1" class="pagination">
           <n-pagination v-model:page="currentPage" :page-count="pagecount" @update:page="onPageChange" />
         </div>
@@ -107,7 +132,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { NButton, NInput, NSelect, NScrollbar, NSpin, NPagination } from 'naive-ui'
+import { NButton, NInput, NSelect, NScrollbar, NSpin, NPagination, NSkeleton } from 'naive-ui'
 import { imgUrl } from '@/api/img'
 
 const router = useRouter()
@@ -121,7 +146,7 @@ const currentTid = ref('')
 const currentPage = ref(1)
 const pagecount = ref(1)
 const allSites = ref<any[]>([])
-const defaultPic = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect fill="%23333" width="100" height="140"/><text x="50" y="75" text-anchor="middle" fill="%23666" font-size="30">🎬</text></svg>'
+const defaultPic = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect fill="%23333" width="100" height="140"/></svg>'
 
 // 只显示点播站点（过滤掉直播/体育相关站点）
 const LIVE_KEYWORDS = ['直播', '体育', '赛事', '球']
@@ -148,20 +173,20 @@ async function loadHome() {
     classes.value = res.class || []
     videos.value = res.list || []
     pagecount.value = res.pagecount || 1
-  } catch (e) {
-    console.error(e)
+  } catch (e: any) {
+    window.$message?.error('加载首页失败')
   } finally {
     loading.value = false
   }
 }
 
-function onSiteChange(key: string) {
+function onSiteChange(_key: string) {
   currentTid.value = ''
   currentPage.value = 1
   loadHome()
 }
 
-async function onCategoryClick(tid: string, name: string) {
+async function onCategoryClick(tid: string, _name: string) {
   currentTid.value = tid
   currentPage.value = 1
   await loadCategory()
@@ -174,6 +199,8 @@ async function loadCategory() {
     const res: any = await vodAPI.category(selectedSite.value, currentTid.value, 1)
     videos.value = res.list || []
     pagecount.value = res.pagecount || 1
+  } catch (e: any) {
+    window.$message?.error('加载分类失败')
   } finally {
     loading.value = false
   }
@@ -186,6 +213,8 @@ async function onPageChange(page: number) {
     const { vodAPI } = await import('@/api/vod')
     const res: any = await vodAPI.category(selectedSite.value, currentTid.value, page)
     videos.value = res.list || []
+  } catch (e: any) {
+    window.$message?.error('加载分页失败')
   } finally {
     loading.value = false
   }
@@ -214,7 +243,7 @@ onMounted(async () => {
 .home-page { padding: 20px; max-width: 1600px; margin: 0 auto; min-height: 100vh; }
 .init-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; }
-.empty-icon { font-size: 64px; margin-bottom: 16px; }
+.empty-icon { margin-bottom: 16px; }
 .empty-state h2 { font-size: 28px; margin: 0 0 8px; }
 .empty-state p { font-size: 16px; color: #888; margin: 0 0 24px; }
 .home-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
@@ -232,11 +261,12 @@ onMounted(async () => {
 .quick-card { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; background: var(--n-card-color); border-radius: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .quick-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); color: var(--n-primary-color); }
 .quick-card span { font-size: 14px; font-weight: 500; }
-.quick-icon { font-size: 24px; }
+.quick-icon { font-size: 24px; display:flex; align-items:center; }
 .video-section { margin-bottom: 24px; }
 .no-data { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; }
-.no-data-icon { font-size: 48px; margin-bottom: 12px; }
 .no-data p { color: #888; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.skeleton-card { border-radius: 12px; overflow: hidden; }
 .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
 .video-card { border-radius: 12px; overflow: hidden; background: var(--n-card-color); cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .video-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }

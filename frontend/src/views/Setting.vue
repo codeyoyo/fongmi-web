@@ -1,7 +1,12 @@
 <template>
   <div class="settings-page">
     <div class="page-header">
-      <h2>⚙️ 设置</h2>
+      <h2>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-4px;margin-right:6px">
+          <circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        设置
+      </h2>
     </div>
 
     <div class="section">
@@ -16,7 +21,9 @@
           <n-tab-pane name="file" tab="文件上传">
             <n-upload :custom-request="onUpload" :show-file-list="false" accept=".json">
               <n-upload-dragger>
-                <n-icon size="48" :depth="3">📁</n-icon>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
                 <n-text style="font-size:16px">点击或拖拽 JSON 配置文件到此处</n-text>
               </n-upload-dragger>
             </n-upload>
@@ -55,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useMessage, NCard, NTabs, NTabPane, NInput, NButton, NUpload, NUploadDragger, NIcon, NText, NTag, NSpace } from 'naive-ui'
+import { useMessage, NCard, NTabs, NTabPane, NInput, NButton, NUpload, NUploadDragger, NText, NTag, NSpace } from 'naive-ui'
 import { importConfig, getConfigs, deleteConfig, activateConfig } from '@/api/config'
 
 const message = useMessage()

@@ -18,7 +18,8 @@ async def list_history():
         items = result.scalars().all()
     return [
         {"id": h.id, "site_key": h.site_key, "vod_id": h.vod_id, "name": h.name,
-         "pic": h.pic, "episode": h.episode, "time": h.created_at.isoformat() if h.created_at else ""}
+         "pic": h.pic, "episode": h.episode, "position": h.position, "duration": h.duration,
+         "time": h.created_at.isoformat() if h.created_at else ""}
         for h in items
     ]
 
@@ -30,6 +31,8 @@ async def add_history(body: dict):
     name = body.get("name", "")
     pic = body.get("pic", "")
     episode = body.get("episode", "")
+    position = body.get("position", 0)
+    duration = body.get("duration", 0)
     async with async_session() as session:
         result = await session.execute(
             select(HistoryModel).where(HistoryModel.site_key == site_key, HistoryModel.vod_id == vod_id)
@@ -40,11 +43,35 @@ async def add_history(body: dict):
             existing.name = name
             existing.pic = pic
             existing.episode = episode
+            if position:
+                existing.position = position
+            if duration:
+                existing.duration = duration
             existing.created_at = now
         else:
             session.add(HistoryModel(site_key=site_key, vod_id=vod_id, name=name,
-                                     pic=pic, episode=episode, created_at=now))
+                                     pic=pic, episode=episode, position=position,
+                                     duration=duration, created_at=now))
         await session.commit()
+    return {"code": 0}
+
+
+@router.put("/history")
+async def update_history(body: dict):
+    site_key = body.get("site_key", "")
+    vod_id = body.get("vod_id", "")
+    position = body.get("position", 0)
+    duration = body.get("duration", 0)
+    async with async_session() as session:
+        result = await session.execute(
+            select(HistoryModel).where(HistoryModel.site_key == site_key, HistoryModel.vod_id == vod_id)
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            existing.position = position
+            existing.duration = duration
+            existing.updated_at = datetime.now()
+            await session.commit()
     return {"code": 0}
 
 

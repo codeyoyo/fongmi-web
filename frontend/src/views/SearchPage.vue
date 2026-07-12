@@ -9,11 +9,19 @@
         autofocus
         @keyup.enter="doSearch"
       >
-        <template #prefix>🔍</template>
+        <template #prefix>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+        </template>
       </n-input>
     </div>
 
-    <div v-if="loading" class="loading"><n-spin size="large" /></div>
+    <div v-if="loading" class="skeleton-grid">
+      <div v-for="i in 12" :key="i" class="skeleton-card">
+        <n-skeleton width="100%" :height="270" bordered />
+      </div>
+    </div>
     <div v-else-if="results.length" class="results-grid">
       <div v-for="v in results" :key="v._site_key + '_' + v.vod_id" class="video-card" @click="goDetail(v)">
         <div class="card-cover">
@@ -28,7 +36,11 @@
     </div>
     <div v-else-if="searched" class="no-result"><n-empty description="未找到相关结果" /></div>
     <div v-else class="start-search">
-      <div class="start-icon">🔍</div>
+      <div class="start-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:#555">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+      </div>
       <p>输入关键词开始搜索...</p>
     </div>
   </div>
@@ -37,7 +49,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NInput, NSpin, NEmpty } from 'naive-ui'
+import { NInput, NEmpty, NSkeleton } from 'naive-ui'
 import { imgUrl } from '@/api/img'
 
 const route = useRoute()
@@ -60,8 +72,8 @@ async function doSearch() {
     const { vodAPI } = await import('@/api/vod')
     const res: any = await vodAPI.search(keyword.value)
     results.value = Array.isArray(res) ? res : (res?.list || [])
-  } catch (e) {
-    console.error(e)
+  } catch (e: any) {
+    window.$message?.error('搜索失败')
     results.value = []
   } finally {
     loading.value = false
@@ -80,11 +92,12 @@ function goDetail(v: any) {
 <style scoped>
 .search-page { padding: 20px; max-width: 1400px; margin: 0 auto; }
 .search-input { margin-bottom: 20px; }
-.loading { display: flex; justify-content: center; padding: 60px 0; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.skeleton-card { border-radius: 12px; overflow: hidden; }
 .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
 .no-result { padding: 60px 0; display: flex; justify-content: center; }
 .start-search { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; color: #888; }
-.start-icon { font-size: 64px; margin-bottom: 16px; }
+.start-icon { margin-bottom: 16px; }
 .start-search p { font-size: 16px; }
 .video-card { border-radius: 12px; overflow: hidden; background: var(--n-card-color); cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .video-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
