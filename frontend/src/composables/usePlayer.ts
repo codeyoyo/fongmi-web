@@ -43,6 +43,9 @@ export function usePlayer() {
         manifestLoadingMaxRetry: 8,
         levelLoadingMaxRetry: 8,
         liveSyncDurationCount: 7,
+        lowLatencyMode: false,
+        capLevelToPlayerSize: true,
+        startLevel: -1,
       })
       hls.loadSource(finalUrl)
       hls.attachMedia(videoRef.value)

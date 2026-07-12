@@ -24,10 +24,32 @@ CACHE_MAX_SIZE = 1024 * 1024 * 1024
 CACHE_TTL = 7200
 _LAST_CLEANUP = 0
 
+# ---- in-memory hot cache ----
+_MEM_CACHE: dict[str, tuple[float, bytes, str]] = {}
+_MEM_CACHE_MAX = 50
+
+def _mem_get(url: str) -> tuple[bytes, str] | None:
+    key = _cache_key(url)
+    if key in _MEM_CACHE:
+        ts, data, ct = _MEM_CACHE[key]
+        if time.time() - ts < CACHE_TTL:
+            _MEM_CACHE[key] = (time.time(), data, ct)
+            return data, ct
+        del _MEM_CACHE[key]
+    return None
+
+def _mem_set(url: str, data: bytes, ct: str):
+    key = _cache_key(url)
+    _MEM_CACHE[key] = (time.time(), data, ct)
+    if len(_MEM_CACHE) > _MEM_CACHE_MAX:
+        oldest = min(_MEM_CACHE.keys(), key=lambda k: _MEM_CACHE[k][0])
+        del _MEM_CACHE[oldest]
+
 # ---- preloader ----
-_PRELOAD_SEM = asyncio.Semaphore(4)
+_PRELOAD_SEM = asyncio.Semaphore(12)
 _PRELOAD_TASKS: dict[str, asyncio.Task] = {}
-_PRELOAD_LIMIT = 30
+_PRELOAD_LIMIT = 50
+_PRELOAD_BLOCK_COUNT = 5
 
 
 def _cache_key(url: str) -> str:
@@ -39,6 +61,9 @@ def _cache_path(key: str) -> Path:
 
 
 def _cache_get(url: str) -> tuple[bytes, str] | None:
+    hit = _mem_get(url)
+    if hit:
+        return hit
     key = _cache_key(url)
     path = _cache_path(key)
     meta = path.with_suffix(".meta")
@@ -48,10 +73,13 @@ def _cache_get(url: str) -> tuple[bytes, str] | None:
         path.unlink(missing_ok=True); meta.unlink(missing_ok=True)
         return None
     path.touch(); meta.touch()
-    return path.read_bytes(), meta.read_text().strip()
+    data, ct = path.read_bytes(), meta.read_text().strip()
+    _mem_set(url, data, ct)
+    return data, ct
 
 
 def _cache_set(url: str, data: bytes, ct: str):
+    _mem_set(url, data, ct)
     key = _cache_key(url)
     path = _cache_path(key)
     meta = path.with_suffix(".meta")
@@ -177,6 +205,24 @@ def _start_preload(playlist_url: str, segments: list[str]):
     t.add_done_callback(lambda _: _PRELOAD_TASKS.pop(playlist_url, None))
 
 
+async def _preload_and_block(segments: list[str]):
+    targets = [u for u in segments if ".m3u8" not in u and _cache_get(u) is None][:_PRELOAD_BLOCK_COUNT]
+    if not targets:
+        return
+    client = _client()
+    sem = asyncio.Semaphore(8)
+    async def _dl(u: str):
+        async with sem:
+            try:
+                resp = await client.get(u, timeout=30.0)
+                if resp.status_code == 200:
+                    ct = "video/mp4" if ".mp4" in u else "video/mp2t"
+                    _cache_set(u, resp.content, ct)
+            except Exception:
+                pass
+    await asyncio.gather(*[_dl(u) for u in targets])
+
+
 # ========== routes ==========
 
 @router.get("/live_url")
@@ -242,11 +288,12 @@ async def media_proxy(path: str, request: Request, extra_headers: str = Query(de
             if is_m3u8:
                 raw = await resp.aread()
                 text = raw.decode("utf-8", errors="replace")
-                rewritten = _rewrite_m3u8(text, real_url)
-                yield rewritten.encode("utf-8")
                 segs = _extract_segment_urls(text, real_url)
                 if segs:
+                    await _preload_and_block(segs)
                     _start_preload(real_url, segs)
+                rewritten = _rewrite_m3u8(text, real_url)
+                yield rewritten.encode("utf-8")
             elif cacheable:
                 buf = b""
                 async for chunk in resp.aiter_bytes(262144):
