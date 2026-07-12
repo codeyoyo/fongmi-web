@@ -26,7 +26,7 @@ _LAST_CLEANUP = 0
 
 # ---- in-memory hot cache ----
 _MEM_CACHE: dict[str, tuple[float, bytes, str]] = {}
-_MEM_CACHE_MAX = 50
+_MEM_CACHE_MAX = 200
 
 def _mem_get(url: str) -> tuple[bytes, str] | None:
     key = _cache_key(url)
@@ -46,10 +46,9 @@ def _mem_set(url: str, data: bytes, ct: str):
         del _MEM_CACHE[oldest]
 
 # ---- preloader ----
-_PRELOAD_SEM = asyncio.Semaphore(12)
+_PRELOAD_SEM = asyncio.Semaphore(30)
 _PRELOAD_TASKS: dict[str, asyncio.Task] = {}
-_PRELOAD_LIMIT = 50
-_PRELOAD_BLOCK_COUNT = 5
+_PRELOAD_BLOCK_COUNT = 8
 
 
 def _cache_key(url: str) -> str:
@@ -129,7 +128,7 @@ def _client() -> httpx.AsyncClient:
             follow_redirects=True, verify=False,
             proxy=_PROXY_URL if _PROXY_URL else None,
             timeout=120.0,
-            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
+            limits=httpx.Limits(max_connections=200, max_keepalive_connections=50),
         )
     return _SHARED_CLIENT
 
@@ -193,7 +192,7 @@ async def _preload_one(client: httpx.AsyncClient, url: str):
 
 async def _preload_worker(playlist_url: str, segments: list[str]):
     client = _client()
-    targets = [u for u in segments[:_PRELOAD_LIMIT] if ".m3u8" not in u]
+    targets = [u for u in segments if ".m3u8" not in u]
     await asyncio.gather(*[_preload_one(client, u) for u in targets])
 
 
@@ -210,7 +209,7 @@ async def _preload_and_block(segments: list[str]):
     if not targets:
         return
     client = _client()
-    sem = asyncio.Semaphore(8)
+    sem = asyncio.Semaphore(15)
     async def _dl(u: str):
         async with sem:
             try:
@@ -296,13 +295,13 @@ async def media_proxy(path: str, request: Request, extra_headers: str = Query(de
                 yield rewritten.encode("utf-8")
             elif cacheable:
                 buf = b""
-                async for chunk in resp.aiter_bytes(262144):
+                async for chunk in resp.aiter_bytes(65536):
                     buf += chunk
                     yield chunk
                 if buf:
                     _cache_set(real_url, buf, "video/mp2t")
             else:
-                async for chunk in resp.aiter_bytes(262144):
+                async for chunk in resp.aiter_bytes(65536):
                     yield chunk
 
     mt = "application/vnd.apple.mpegurl" if is_m3u8 else \
